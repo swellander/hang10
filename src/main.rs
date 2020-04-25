@@ -55,7 +55,7 @@ impl Game {
 
         println!("{}", title);
         println!(
-            "Your word is {} letters long. You have {} guesses remaining. Go! \n\n",
+            "Your word is {} letters long. You have {} guesses remaining 🤙 \n\n",
             self.target.len(),
             self.remaining_guesses
         );
