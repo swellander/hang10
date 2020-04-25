@@ -1,19 +1,3 @@
-fn get_surfer_stages() -> std::io::Result<Vec<String>> {
-    let mut file_paths = std::fs::read_dir("src/surfer_art")?
-        .map(|res| res.map(|e| e.path()))
-        .collect::<Result<Vec<_>, std::io::Error>>()?;
-
-    file_paths.sort();
-
-    let mut stages = vec![];
-    for path in file_paths {
-        let content = std::fs::read_to_string(path)?;
-        stages.push(content);
-    }
-
-    Ok(stages)
-}
-
 fn main() {
     print!("{esc}[2J{esc}[1;1H", esc = 27 as char); // Clear terminal screen
 
@@ -31,7 +15,6 @@ fn main() {
     }
 }
 
-#[derive(Debug)]
 struct Game {
     target: String,
     guess_state: Vec<char>,
@@ -46,7 +29,7 @@ impl Game {
             target: word.to_lowercase().to_string(),
             guess_state: vec!['_'; word.len()],
             remaining_guesses: 10,
-            stages: get_surfer_stages()?,
+            stages: Game::get_surfer_stages()?,
             is_on: true,
         })
     }
@@ -79,7 +62,7 @@ impl Game {
         println!("{}", stage);
         println!("{}\n\n", guess_str.trim());
 
-        let mut guess = String::new(); // TODO: limit to single char
+        let mut guess = String::new();
         std::io::stdin()
             .read_line(&mut guess)
             .expect("Failed to read guess input.");
@@ -90,11 +73,13 @@ impl Game {
     }
 
     fn handle_guess(&mut self, guess: &str) {
-        let is_hit = self.target.contains(guess);
-        if is_hit {
-            self.handle_hit(guess);
-        } else {
-            self.handle_miss();
+        if guess.len() == 1 {
+            let is_hit = self.target.contains(guess);
+            if is_hit {
+                self.handle_hit(guess);
+            } else {
+                self.handle_miss();
+            }
         }
     }
 
@@ -124,5 +109,21 @@ impl Game {
 
     fn is_won(&self) -> bool {
         !self.guess_state.contains(&'_')
+    }
+
+    pub fn get_surfer_stages() -> std::io::Result<Vec<String>> {
+        let mut file_paths = std::fs::read_dir("src/surfer_art")?
+            .map(|res| res.map(|e| e.path()))
+            .collect::<Result<Vec<_>, std::io::Error>>()?;
+
+        file_paths.sort();
+
+        let mut stages = vec![];
+        for path in file_paths {
+            let content = std::fs::read_to_string(path)?;
+            stages.push(content);
+        }
+
+        Ok(stages)
     }
 }
