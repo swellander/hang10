@@ -1,14 +1,24 @@
-use std::io;
+fn get_surfer_stages() -> std::io::Result<Vec<String>> {
+    let mut file_paths = std::fs::read_dir("src/surfer_art")?
+        .map(|res| res.map(|e| e.path()))
+        .collect::<Result<Vec<_>, std::io::Error>>()?;
+
+    file_paths.sort();
+
+    let mut stages = vec![];
+    for path in file_paths {
+        let content = std::fs::read_to_string(path)?;
+        stages.push(content);
+    }
+
+    Ok(stages)
+}
 
 fn main() {
+    print!("{esc}[2J{esc}[1;1H", esc = 27 as char); // Clear terminal screen
+
     let word = "grapefruit";
     let mut game = Game::new(word).unwrap();
-
-    println!("Welcome to Hang 10!");
-    println!(
-        "Your word is {} letters long. You have 10 guesses. Go!",
-        game.target.len()
-    );
 
     while game.is_on {
         game.play_turn();
@@ -25,6 +35,7 @@ fn main() {
 struct Game {
     target: String,
     guess_state: Vec<char>,
+    stages: Vec<String>,
     remaining_guesses: u8,
     is_on: bool,
 }
@@ -35,6 +46,7 @@ impl Game {
             target: word.to_lowercase().to_string(),
             guess_state: vec!['_'; word.len()],
             remaining_guesses: 10,
+            stages: get_surfer_stages()?,
             is_on: true,
         })
     }
@@ -54,16 +66,27 @@ impl Game {
             .map(|x| format!("{}", x.to_string() + " "))
             .collect();
 
-        println!("{} guesses remaining", self.remaining_guesses);
-        println!("{}", guess_str.trim());
+        let title = std::fs::read_to_string("src/title.ascii").expect("Couldn't read game title");
+        let stage_idx = usize::from(self.remaining_guesses - 1);
+        let stage = &self.stages[stage_idx];
+
+        println!("{}", title);
+        println!(
+            "Your word is {} letters long. You have {} guesses remaining. Go! \n\n",
+            self.target.len(),
+            self.remaining_guesses
+        );
+        println!("{}", stage);
+        println!("{}\n\n", guess_str.trim());
 
         let mut guess = String::new(); // TODO: limit to single char
-        io::stdin()
+        std::io::stdin()
             .read_line(&mut guess)
             .expect("Failed to read guess input.");
 
         self.handle_guess(guess.to_lowercase().trim());
-        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+
+        print!("{esc}[2J{esc}[1;1H", esc = 27 as char); // Clear terminal screen
     }
 
     fn handle_guess(&mut self, guess: &str) {
